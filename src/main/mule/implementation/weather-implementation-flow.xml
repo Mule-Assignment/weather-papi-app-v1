@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	
+	<sub-flow name="weather-implementation-flowSub_Flow" doc:id="a2f3a941-4e39-44a7-8b72-78190ab671cb" >
+		<logger level="INFO" doc:name="Logger" doc:id="c67ee96e-b3ff-40b0-88d0-ef092c54af10" />
+		<scatter-gather doc:name="Scatter-Gather" doc:id="0f1df137-004b-4d11-8c3c-d2b0241699a6" >
+			<route >
+				<http:request method="GET" doc:name="Request to postal" doc:id="eeddd5ea-e82f-4829-8899-dcab28f75fbe" path="${sapi.pathPostal}" config-ref="HTTP_Request_configuration_sapi">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : vars.authorization,
+	"transactionId" : attributes.headers.'transactionId'
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"ipAddress" : vars.ipAddress
+}]]]></http:uri-params>
+		
+</http:request>
+				<ee:transform doc:name="Transform Message" doc:id="2385cd85-f69a-47dd-8150-8e5ff83f64dc">
+			<ee:message>
+						<ee:set-payload ><![CDATA[%dw 2.0 
+output application/json
+---
+{
+	location: payload.region,
+	postalCode: payload.postal
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+			</ee:variables>
+		</ee:transform>
+			</route>
+			<route >
+				<http:request method="GET" doc:name="Request to FileList" doc:id="5a861a4c-d39e-4406-b1c6-717edb9649e0" path="${sapi.pathFileList}" config-ref="HTTP_Request_configuration_sapi">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : vars.authorization,
+	"transactionId" : attributes.headers.'transactionId'
+}]]]></http:headers>
+		</http:request>
+				<ee:transform doc:name="Transform Message" doc:id="50c37672-e984-4bfc-bab1-98e65c9b33a7">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="fileId"><![CDATA[%dw 2.0
+output application/json
+---
+(payload.files filter ((item, index) -> item.name == "Mulesoft-Assignment.csv")).id[0]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<http:request method="GET" doc:name="Request to pathFileContent" doc:id="d43d19b3-ffc4-41fe-8433-f0051c95faf0" path="${sapi.pathFileContent}" config-ref="HTTP_Request_configuration_sapi">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : vars.authorization,
+	"transactionId" : attributes.headers.'transactionId'
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"fileId" : vars.fileId
+}]]]></http:uri-params>
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	"alt" : "media"
+}]]]></http:query-params>
+		</http:request>
+				<ee:transform doc:name="Transform Message" doc:id="9e41b90b-ed70-46c5-ab65-538d3c9eca19">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</route>
+		</scatter-gather>
+		<choice doc:name="Choice" doc:id="39792fdc-6a61-4261-82b3-49f0e734083d" >
+			<when expression="#[sizeOf(payload.'1'.payload filter ((item, index) -&gt; ((item.State == payload.'0'.payload.location) and (item.&quot;Zip Code&quot; == payload.'0'.payload.postalCode))))&gt;0]">
+				<ee:transform doc:name="Transform Message" doc:id="125d6f4b-b6bb-4dd5-bb85-e9d218635f4b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	postalCode: payload.'0'.payload.postalCode
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<raise-error doc:name="Raise error" doc:id="c2591ccf-6a51-4d05-9957-ce5120ff8e7c" type="CUSTOM:ERROR01"/>
+			</otherwise>
+		</choice>
+		<http:request method="GET" doc:name="Request to pathFileContent" doc:id="6900bfdb-f5ab-4db3-ab0f-c671459235c4" path="${sapi.pathWeather}" config-ref="HTTP_Request_configuration_sapi">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : vars.authorization,
+	"transactionId" : attributes.headers.'transactionId'
+}]]]></http:headers>
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	"postalCode" : payload.postalCode
+}]]]></http:query-params>
+		</http:request>
+		<logger level="INFO" doc:name="Logger" doc:id="d57fe7c1-23ec-4ef5-936f-9a3f01a324a5" />
+	</sub-flow>
+</mule>

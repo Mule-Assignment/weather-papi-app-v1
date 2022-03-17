@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+   <flow name="weather-papi-api-main">
+        <http:listener config-ref="weather-papi-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="weather-papi-api-config" />
+		<error-handler ref="global-apikit-error_Handler" />
+    </flow>
+    <flow name="weather-papi-api-console">
+        <http:listener config-ref="weather-papi-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="weather-papi-api-config" />
+		<error-handler ref="global-apikit-error_Handler" />
+    </flow>
+    <flow name="get:\weather\(ipAddress):weather-papi-api-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="ipAddress"><![CDATA[attributes.uriParams.'ipAddress']]></ee:set-variable>
+				<ee:set-variable variableName="transactionId" ><![CDATA[attributes.headers.'tansactionId']]></ee:set-variable>
+				<ee:set-variable variableName="authorization" ><![CDATA[attributes.headers.Authorization]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="Flow Reference" doc:id="f18895c0-eb67-4837-b9ca-af29306b25f4" name="weather-implementation-flowSub_Flow"/>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  highTemperature: payload.highTemperature,
+  lowTemperature: payload.lowTemperature,
+  currentTemperature: payload.currentTemperature,
+  currentOutlook: payload.currentOutlook
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>
