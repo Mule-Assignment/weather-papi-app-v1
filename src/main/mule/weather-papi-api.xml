@@ -34,19 +34,10 @@
 				<ee:set-variable variableName="authorization" ><![CDATA[attributes.headers.Authorization]]></ee:set-variable>
             </ee:variables>
         </ee:transform>
-        <flow-ref doc:name="Flow Reference" doc:id="f18895c0-eb67-4837-b9ca-af29306b25f4" name="weather-implementation-flowSub_Flow"/>
-		<ee:transform>
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  highTemperature: payload.highTemperature,
-  lowTemperature: payload.lowTemperature,
-  currentTemperature: payload.currentTemperature,
-  currentOutlook: payload.currentOutlook
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+        <logger level="INFO" doc:name="Requester Logger" doc:id="ca7d8dfa-03af-42ce-8341-56d05b058750" message="Request for Weather PAPI for Transaction ID : #[vars.transactionId]"/>
+		<flow-ref doc:name="Flow Reference" doc:id="f18895c0-eb67-4837-b9ca-af29306b25f4" name="weather-implementation-flowSub_Flow"/>
+		
+		<logger level="INFO" doc:name="Response Logger" doc:id="f657df1b-436a-4f8b-9911-1ddf702de671" message="Response for Weather PAPI for Transaction ID : #[vars.transactionId]"/>
+		<error-handler ref="global-app-error_Handler" />
     </flow>
 </mule>

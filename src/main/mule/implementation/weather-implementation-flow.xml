@@ -8,7 +8,6 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
 	
 	<sub-flow name="weather-implementation-flowSub_Flow" doc:id="a2f3a941-4e39-44a7-8b72-78190ab671cb" >
-		<logger level="INFO" doc:name="Logger" doc:id="c67ee96e-b3ff-40b0-88d0-ef092c54af10" />
 		<scatter-gather doc:name="Scatter-Gather" doc:id="0f1df137-004b-4d11-8c3c-d2b0241699a6" >
 			<route >
 				<http:request method="GET" doc:name="Request to postal" doc:id="eeddd5ea-e82f-4829-8899-dcab28f75fbe" path="${sapi.pathPostal}" config-ref="HTTP_Request_configuration_sapi">
@@ -116,6 +115,18 @@ output application/json
 	"postalCode" : payload.postalCode
 }]]]></http:query-params>
 		</http:request>
-		<logger level="INFO" doc:name="Logger" doc:id="d57fe7c1-23ec-4ef5-936f-9a3f01a324a5" />
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  highTemperature: payload.highTemperature,
+  lowTemperature: payload.lowTemperature,
+  currentTemperature: payload.currentTemperature,
+  currentOutlook: payload.currentOutlook
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
 	</sub-flow>
 </mule>
