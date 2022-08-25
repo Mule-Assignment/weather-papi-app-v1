@@ -86,23 +86,40 @@ output application/json
             </on-error-propagate>
 		</error-handler>
 	<error-handler name="global-app-error_Handler" doc:id="2ac36b16-faa2-463d-b2a0-ac27c65b3bfb" >
-		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="73ba055d-5ea9-4736-bb39-b82f79a92ed9" >
-			<ee:transform doc:name="Transform Message" doc:id="10de7d72-686e-4691-8299-fe9a276a75cd" >
-				<ee:message >
-					<ee:set-payload ><![CDATA[%dw 2.0
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="73ba055d-5ea9-4736-bb39-b82f79a92ed9" type="CUSTOM:ERROR01">
+		<logger level="INFO" doc:name="Error Logger" doc:id="90e100df-5826-4b9b-b9fe-a90797c20751" message="default error" />
+			<ee:transform doc:name="Transform Message" doc:id="189b3263-e298-4c2b-ba34-f8f067a9a8dc">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Error"
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[421]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-continue>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="95060789-7b32-4bad-abbf-1fdc392deaaf" >
+			<logger level="INFO" doc:name="Error Logger" doc:id="240a21b0-32ba-453b-83dc-b6bdbe22dd1d" message="default error" />
+			<ee:transform doc:name="Transform Message" doc:id="10de7d72-686e-4691-8299-fe9a276a75cd">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
 output application/java
 ---
 {
 	"message":error.errorMessage
 }]]></ee:set-payload>
 				</ee:message>
-				<ee:variables >
-					<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[500]]></ee:set-variable>
 				</ee:variables>
 			</ee:transform>
-			<logger level="INFO" doc:name="Error Logger" doc:id="240a21b0-32ba-453b-83dc-b6bdbe22dd1d" message="default error"/>
 		</on-error-propagate>
-	</error-handler>
+	
+</error-handler>
 	
 	
 </mule>
